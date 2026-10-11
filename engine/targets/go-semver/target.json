@@ -1,0 +1,17 @@
+{
+  "name": "go-semver",
+  "language": "go",
+  "title": "Version 1.10 sorts before 1.9",
+  "issue": "Release tooling thinks version 1.10.0 is older than 1.9.0, and versions without a patch number crash it. Compare must compare each component numerically and treat missing components as zero. Fix semver.go so every test in semver_test.go passes. Do not modify the tests.",
+  "editable": [
+    "semver.go"
+  ],
+  "protected": [
+    "*_test.go",
+    "go.mod"
+  ],
+  "context": [
+    "semver_test.go"
+  ],
+  "primable": true
+}

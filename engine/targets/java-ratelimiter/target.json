@@ -1,0 +1,18 @@
+{
+  "name": "java-ratelimiter",
+  "language": "java",
+  "title": "Token bucket never refills under steady polling",
+  "issue": "Customers report that our token bucket rate limiter starves clients that poll frequently: when a client checks availableTokens() more often than the refill period, the bucket never refills. Separately, the last token in the bucket can never be consumed. Fix TokenBucket so that every test in TokenBucketTest passes. Keep the public API unchanged and do not modify the tests or the build file.",
+  "editable": [
+    "src/main/java/com/contoso/ratelimit/TokenBucket.java",
+    "src/main/java/com/contoso/ratelimit/RateLimitPolicy.java"
+  ],
+  "protected": [
+    "pom.xml",
+    "src/test/**"
+  ],
+  "context": [
+    "src/test/java/com/contoso/ratelimit/TokenBucketTest.java"
+  ],
+  "primable": true
+}

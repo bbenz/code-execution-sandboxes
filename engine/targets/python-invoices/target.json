@@ -1,0 +1,17 @@
+{
+  "name": "python-invoices",
+  "language": "python",
+  "title": "Invoice totals round the wrong way",
+  "issue": "Finance found invoices that are off by a cent. Totals must be rounded half-up to whole cents without binary floating-point surprises, and negative quantities must raise ValueError. Fix invoices/totals.py so every test in tests/test_totals.py passes. Do not modify the tests.",
+  "editable": [
+    "invoices/totals.py"
+  ],
+  "protected": [
+    "tests/**",
+    "pyproject.toml"
+  ],
+  "context": [
+    "tests/test_totals.py"
+  ],
+  "primable": false
+}

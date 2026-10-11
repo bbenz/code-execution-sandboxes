@@ -1,0 +1,18 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+httpx==0.28.1
+
+# Azure Container Apps Sandboxes (data plane) + keyless auth
+azure-containerapps-sandbox==0.1.0b4
+azure-identity==1.19.0
+
+# Coding agent (Azure OpenAI / Microsoft Foundry), keyless via a bearer-token provider
+openai>=2.25.0,<3
+
+# Observability: OpenTelemetry export to Application Insights
+azure-monitor-opentelemetry==1.8.9
+opentelemetry-instrumentation-fastapi>=0.57b0
+
+# Loads the active azd environment when running locally
+dotenv-azd==0.3.0

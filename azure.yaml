@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+#
+# `azd up` for the referee demo:
+#   1. Provisions infra/main.bicep: ACR, Azure OpenAI (a coding-agent model), Log Analytics,
+#      Application Insights, an ACA environment + the orchestrator app, a sandbox group with a
+#      user-assigned identity, and the role assignments the orchestrator and sandbox group need.
+#   2. Builds and pushes the referee engine image to ACR (postprovision hook).
+#   3. Builds the primed and base sandbox disk images from that engine image (postprovision hook).
+#   4. Builds and deploys the orchestrator image to the Container App.
+#
+# Redeploy code only:  azd deploy
+# Rebuild infra only:  azd provision
+# Tear down:           azd down   (deletes the sandbox group and every sandbox, snapshot, and disk image in it)
+
+name: code-execution-sandboxes
+metadata:
+  template: code-execution-sandboxes@1.0.0
+
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+services:
+  orchestrator:
+    project: .
+    language: python
+    host: containerapp
+    docker:
+      path: orchestrator/Dockerfile
+      context: .
+      remoteBuild: true
+      registry: ${AZURE_CONTAINER_REGISTRY_ENDPOINT}
+
+hooks:
+  # After infra exists, build the engine image in ACR and turn it into primed + base disk images.
+  postprovision:
+    posix:
+      shell: sh
+      run: |
+        set -e
+        bash scripts/build_engine.sh
+        python scripts/prepare_images.py
+    windows:
+      shell: pwsh
+      run: |
+        pwsh -NoProfile -File scripts/build_engine.ps1
+        if ($LASTEXITCODE -ne 0) { throw "engine image build failed" }
+        python scripts/prepare_images.py
+        if ($LASTEXITCODE -ne 0) { throw "disk image preparation failed" }

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Every Loop Needs a Referee</title>
+<style>
+  :root {
+    --bg: #0b1020; --panel: #151b2e; --panel2: #1b2338; --ink: #e8ecf6; --muted: #93a0bd;
+    --line: #2a3350; --accent: #4aa8ff; --green: #3ad29f; --red: #ff6b6b; --amber: #ffb454;
+    --purple: #b98cff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+  header { padding: 16px 24px; border-bottom: 1px solid var(--line); display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 700; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  .pill { font-size: 12px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .pill.on { color: var(--green); border-color: var(--green); }
+  main { display: grid; grid-template-columns: 340px 1fr; gap: 0; height: calc(100vh - 66px); }
+  .controls { padding: 20px 24px; border-right: 1px solid var(--line); overflow-y: auto; }
+  .controls label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 16px 0 6px; }
+  select, button { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel2); color: var(--ink); font-size: 14px; }
+  button { cursor: pointer; font-weight: 600; margin-top: 10px; }
+  button.primary { background: var(--accent); color: #04142b; border-color: var(--accent); }
+  button.ghost { background: transparent; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .checkbox { display: flex; gap: 8px; align-items: center; margin-top: 12px; color: var(--muted); font-size: 13px; }
+  .checkbox input { width: auto; }
+  .board { padding: 18px 24px; overflow-y: auto; }
+  .issue { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+  .issue h2 { margin: 0 0 4px; font-size: 15px; }
+  .issue p { margin: 0; color: var(--muted); font-size: 13px; }
+  .waves { display: flex; flex-direction: column; gap: 18px; }
+  .wave-title { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; display: flex; gap: 10px; align-items: center; }
+  .lanes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .lane { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; position: relative; overflow: hidden; }
+  .lane .strategy { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .lane .author { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .phase { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 7px; min-height: 18px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+  .lane.running .dot { background: var(--accent); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  .steps { display: flex; gap: 4px; margin: 10px 0 8px; }
+  .step { flex: 1; height: 5px; border-radius: 3px; background: var(--panel2); }
+  .step.done { background: var(--accent); }
+  .step.ok { background: var(--green); }
+  .step.bad { background: var(--red); }
+  .verdict { font-size: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .tests { font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: .03em; }
+  .badge.passed { background: rgba(58,210,159,.16); color: var(--green); }
+  .badge.failed { background: rgba(255,107,107,.16); color: var(--red); }
+  .badge.disqualified { background: rgba(185,140,255,.18); color: var(--purple); }
+  .badge.error { background: rgba(255,180,84,.16); color: var(--amber); }
+  .badge.running, .badge.queued { background: rgba(74,168,255,.14); color: var(--accent); }
+  .lane.win { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
+  .crown { position: absolute; top: 10px; right: 12px; font-size: 16px; }
+  .audit { margin-top: 7px; font-size: 11px; color: var(--muted); }
+  .audit.block { color: var(--red); }
+  .reason { color: var(--muted); margin-top: 5px; font-size: 12px; }
+  .result-banner { margin-bottom: 14px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); display: none; }
+  .result-banner.show { display: block; }
+  .result-banner.win { border-color: var(--green); }
+  .log { margin-top: 16px; font-size: 11px; color: var(--muted); font-family: "Space Mono", ui-monospace, monospace; max-height: 140px; overflow-y: auto; border-top: 1px solid var(--line); padding-top: 8px; }
+  code { background: var(--panel2); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+  .cap { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Every Loop Needs a Referee</h1>
+  <span class="sub">Parallel verification sandboxes on <strong id="backendName">…</strong></span>
+  <span class="pill" id="capPill">0 sandboxes active</span>
+  <span class="pill" id="telemetryPill">telemetry</span>
+  <span class="pill" id="tenantPill">tenant</span>
+</header>
+<main>
+  <section class="controls">
+    <label for="target">Target project</label>
+    <select id="target"></select>
+
+    <label for="generator">Coding agent</label>
+    <select id="generator">
+      <option value="auto">Auto</option>
+      <option value="recorded">Recorded (deterministic)</option>
+      <option value="llm">Live model</option>
+    </select>
+
+    <label for="waves">Max waves</label>
+    <select id="waves"><option>1</option><option selected>3</option><option>5</option></select>
+
+    <label for="cpw">Candidates per wave</label>
+    <select id="cpw"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select>
+
+    <div class="checkbox"><input type="checkbox" id="rogue" /><label for="rogue" style="margin:0;text-transform:none;letter-spacing:0;">Inject a rogue candidate (live model only)</label></div>
+
+    <button class="primary" id="startBtn">Start the race</button>
+    <button class="ghost" id="benchBtn">Benchmark: cold vs. primed</button>
+    <button class="ghost" id="sweepBtn">Sweep leftover sandboxes</button>
+
+    <div class="log" id="log"></div>
+  </section>
+
+  <section class="board">
+    <div class="issue" id="issue"></div>
+    <div class="result-banner" id="banner"></div>
+    <div class="waves" id="waves"></div>
+  </section>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>

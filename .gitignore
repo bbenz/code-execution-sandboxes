@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Java / Maven
+target/
+
+# Go
+*.out
+
+# Engine working artifacts
+engine/**/.referee/
+**/verdict.json
+**/status.json
+
+# azd / Azure
+.azure/
+*.env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Bicep build output
+infra/*.json

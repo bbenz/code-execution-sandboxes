@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="420" viewBox="0 0 900 420" font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+  <rect width="900" height="420" rx="14" fill="#0b1020"/>
+  <text x="28" y="40" fill="#e8ecf6" font-size="20" font-weight="700">Every Loop Needs a Referee</text>
+  <text x="28" y="62" fill="#93a0bd" font-size="13">Parallel verification sandboxes · Azure Container Apps Sandboxes</text>
+  <rect x="640" y="28" width="104" height="22" rx="11" fill="none" stroke="#3ad29f"/>
+  <text x="658" y="43" fill="#3ad29f" font-size="11">Azure Monitor on</text>
+  <rect x="752" y="28" width="120" height="22" rx="11" fill="none" stroke="#2a3350"/>
+  <text x="766" y="43" fill="#93a0bd" font-size="11">8 sandboxes active</text>
+
+  <!-- Wave 1 -->
+  <text x="28" y="96" fill="#93a0bd" font-size="12" letter-spacing="1">WAVE 1 — 3 FAILED, 2 DISQUALIFIED</text>
+  <g>
+    <!-- failed lane -->
+    <rect x="28" y="106" width="196" height="92" rx="10" fill="#151b2e" stroke="#2a3350"/>
+    <text x="42" y="130" fill="#e8ecf6" font-size="13" font-weight="600">Fix the off-by-one</text>
+    <text x="42" y="147" fill="#93a0bd" font-size="11">recorded · 1 file</text>
+    <rect x="42" y="156" width="168" height="5" rx="2" fill="#ff6b6b"/>
+    <rect x="42" y="172" width="54" height="16" rx="4" fill="#3a1b24"/>
+    <text x="49" y="184" fill="#ff6b6b" font-size="10" font-weight="700">FAILED</text>
+    <text x="104" y="184" fill="#93a0bd" font-size="10">9/12 tests</text>
+
+    <!-- tamper lane -->
+    <rect x="236" y="106" width="196" height="92" rx="10" fill="#151b2e" stroke="#2a3350"/>
+    <text x="250" y="130" fill="#e8ecf6" font-size="13" font-weight="600">Adjust the tests</text>
+    <text x="250" y="147" fill="#93a0bd" font-size="11">recorded · 2 files</text>
+    <rect x="250" y="156" width="168" height="5" rx="2" fill="#b98cff"/>
+    <rect x="250" y="172" width="104" height="16" rx="4" fill="#271b3a"/>
+    <text x="257" y="184" fill="#b98cff" font-size="10" font-weight="700">DISQUALIFIED</text>
+    <text x="250" y="198" fill="#93a0bd" font-size="9">edited a protected test file</text>
+
+    <!-- rogue lane (highlighted) -->
+    <rect x="444" y="106" width="340" height="92" rx="10" fill="#1b1322" stroke="#ff6b6b" stroke-width="1.5"/>
+    <text x="458" y="130" fill="#e8ecf6" font-size="13" font-weight="600">Fix both bugs + "readiness telemetry"</text>
+    <text x="458" y="147" fill="#93a0bd" font-size="11">recorded · 1 file · 12/12 tests pass ✓</text>
+    <rect x="458" y="156" width="312" height="5" rx="2" fill="#3ad29f"/>
+    <rect x="458" y="172" width="104" height="16" rx="4" fill="#271b3a"/>
+    <text x="465" y="184" fill="#b98cff" font-size="10" font-weight="700">DISQUALIFIED</text>
+    <text x="574" y="184" fill="#ff6b6b" font-size="10">⛔ egress blocked: metrics.contoso-telemetry.example/ingest</text>
+  </g>
+
+  <!-- feedback arrow -->
+  <text x="28" y="232" fill="#ffb454" font-size="12">no winner → feed failures back → wave 2 ↓</text>
+
+  <!-- Wave 2 -->
+  <text x="28" y="262" fill="#93a0bd" font-size="12" letter-spacing="1">WAVE 2 — 2 PASSED, 1 FAILED</text>
+  <g>
+    <!-- winner -->
+    <rect x="28" y="272" width="240" height="100" rx="10" fill="#141f1b" stroke="#3ad29f" stroke-width="2"/>
+    <text x="250" y="296" fill="#ffd166" font-size="18">👑</text>
+    <text x="42" y="296" fill="#e8ecf6" font-size="13" font-weight="600">Carry the leftover time</text>
+    <text x="42" y="313" fill="#93a0bd" font-size="11">recorded · 1 file</text>
+    <rect x="42" y="322" width="212" height="5" rx="2" fill="#3ad29f"/>
+    <rect x="42" y="338" width="54" height="16" rx="4" fill="#12291f"/>
+    <text x="49" y="350" fill="#3ad29f" font-size="10" font-weight="700">PASSED</text>
+    <text x="104" y="350" fill="#93a0bd" font-size="10">12/12 · +7/-3 (smallest)</text>
+    <text x="42" y="367" fill="#3ad29f" font-size="9">✓ no outbound attempts</text>
+
+    <!-- passed, bigger diff -->
+    <rect x="280" y="272" width="240" height="100" rx="10" fill="#151b2e" stroke="#2a3350"/>
+    <text x="294" y="296" fill="#e8ecf6" font-size="13" font-weight="600">Validate and rewrite</text>
+    <text x="294" y="313" fill="#93a0bd" font-size="11">recorded · 1 file</text>
+    <rect x="294" y="322" width="212" height="5" rx="2" fill="#3ad29f"/>
+    <rect x="294" y="338" width="54" height="16" rx="4" fill="#12291f"/>
+    <text x="301" y="350" fill="#3ad29f" font-size="10" font-weight="700">PASSED</text>
+    <text x="356" y="350" fill="#93a0bd" font-size="10">12/12 · +18/-6 (loses)</text>
+
+    <!-- failed -->
+    <rect x="532" y="272" width="240" height="100" rx="10" fill="#151b2e" stroke="#2a3350"/>
+    <text x="546" y="296" fill="#e8ecf6" font-size="13" font-weight="600">Fix the refill only</text>
+    <text x="546" y="313" fill="#93a0bd" font-size="11">recorded · 1 file</text>
+    <rect x="546" y="322" width="212" height="5" rx="2" fill="#ff6b6b"/>
+    <rect x="546" y="338" width="54" height="16" rx="4" fill="#3a1b24"/>
+    <text x="553" y="350" fill="#ff6b6b" font-size="10" font-weight="700">FAILED</text>
+    <text x="608" y="350" fill="#93a0bd" font-size="10">forgot the off-by-one</text>
+  </g>
+
+  <text x="792" y="300" fill="#93a0bd" font-size="11" transform="rotate(90 792 300)">each lane = one microVM</text>
+</svg>

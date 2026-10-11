@@ -1,0 +1,17 @@
+#!/bin/sh
+# Referee entry point. The toolchain environment is set explicitly so the engine behaves the same
+# whether it is started by a sandbox exec, docker exec, or a trigger.
+export HOME="${HOME:-/root}"
+export JAVA_HOME=/opt/java
+export MAVEN_HOME=/opt/maven
+export GOROOT=/usr/local/go
+export GOPATH=/opt/referee/go/path
+export GOCACHE=/opt/referee/go/cache
+export GOTOOLCHAIN=local
+export GOFLAGS=-mod=mod
+export PATH="/opt/referee/venv/bin:$JAVA_HOME/bin:$MAVEN_HOME/bin:$GOROOT/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export PYTHONPATH=/opt/referee/lib
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONUNBUFFERED=1
+export REFEREE_HOME=/opt/referee
+exec /opt/referee/venv/bin/python -m referee "$@"

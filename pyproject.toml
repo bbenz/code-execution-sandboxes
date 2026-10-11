@@ -1,0 +1,13 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["engine/targets", "orchestrator/recorded"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+# B008: FastAPI dependency defaults. B027: optional no-op lifecycle hooks on the backend base class.
+ignore = ["B008", "B027"]
