@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import shlex
 from datetime import UTC, datetime, timedelta
 
@@ -109,6 +110,12 @@ def _image_name(image: DiskImage) -> str:
     return (image.labels or {}).get("name") or image.name or ""
 
 
+def _built_at(image: DiskImage) -> str:
+    """The UTC build time prepare_images.py puts in an image's name ('' when the name has none)."""
+    match = re.match(r"^ces-(?:primed|base)-(\d{14})-", _image_name(image))
+    return match.group(1) if match else ""
+
+
 class AcaSandboxesBackend(SandboxBackend):
     name = "aca"
 
@@ -159,8 +166,12 @@ class AcaSandboxesBackend(SandboxBackend):
                 self._images[role] = next((i for i in ready if i.id == pinned[role]), None) or \
                     DiskImage._from_dict({"id": pinned[role], "labels": {"name": pinned[role]}})
                 continue
-            named = sorted((i for i in ready if _image_name(i).startswith(prefix)), key=_image_name)
+            named = sorted((i for i in ready if _image_name(i).startswith(prefix)),
+                           key=lambda i: (_built_at(i), _image_name(i)))
             self._images[role] = named[-1] if named else None
+
+    async def refresh_images(self) -> None:
+        await asyncio.to_thread(self.discover_images)
 
     def has_image(self, image: str) -> bool:
         return self._images.get(image) is not None

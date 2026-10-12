@@ -73,8 +73,8 @@ class FakeBackend(SandboxBackend):
     async def egress_audit(self, ref: SandboxRef) -> EgressAudit:
         meta = json.loads(self.files[ref.id]["/work/candidate/candidate.json"])
         denied = self.scripted.get(meta["id"], {}).get("denied", [])
-        return EgressAudit(supported=True, denied=denied,
-                           last_updated=datetime.now(UTC).isoformat())
+        now = datetime.now(UTC).isoformat()
+        return EgressAudit(supported=True, denied=denied, last_updated=now, complete_through=now)
 
     async def delete(self, ref: SandboxRef) -> None:
         self.deleted.append(ref.id)

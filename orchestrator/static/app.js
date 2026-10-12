@@ -170,6 +170,8 @@ function handle(event) {
       break;
     }
     case "run.finished":
+      // The run is over: close the stream, or EventSource reconnects and the server replays the run.
+      if (state.source) { state.source.close(); state.source = null; }
       finishRun(event);
       break;
     case "log":
@@ -230,8 +232,12 @@ async function post(path, body) {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}),
   });
   if (!response.ok) {
-    const detail = await response.json().catch(() => ({}));
-    throw new Error(detail.detail || response.statusText);
+    const detail = (await response.json().catch(() => ({}))).detail;
+    // FastAPI validation errors arrive as a list of {loc, msg} objects.
+    const message = Array.isArray(detail)
+      ? detail.map((d) => `${(d.loc || []).slice(1).join(".")}: ${d.msg}`).join("; ")
+      : detail;
+    throw new Error(message || response.statusText);
   }
   return response.json();
 }
@@ -243,7 +249,7 @@ el("startBtn").addEventListener("click", async () => {
     const { run_id } = await post("/api/race", {
       target: el("target").value,
       generator: el("generator").value,
-      waves: Number(el("waves").value),
+      waves: Number(el("maxWaves").value),
       candidates_per_wave: Number(el("cpw").value),
       inject_rogue: el("rogue").checked,
     });

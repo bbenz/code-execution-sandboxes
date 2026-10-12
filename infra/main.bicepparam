@@ -3,8 +3,8 @@ using 'main.bicep'
 param prefix              = readEnvironmentVariable('CES_PREFIX', 'ces')
 param location            = readEnvironmentVariable('AZURE_LOCATION', 'westus3')
 param openAiLocation      = readEnvironmentVariable('AZURE_OPENAI_LOCATION', 'westus3')
-param openAiModel         = readEnvironmentVariable('AZURE_OPENAI_MODEL', 'gpt-5.6-luna')
-param openAiModelVersion  = readEnvironmentVariable('AZURE_OPENAI_MODEL_VERSION', '2026-07-09')
+param openAiModel         = readEnvironmentVariable('AZURE_OPENAI_MODEL', 'gpt-6-luna')
+param openAiModelVersion  = readEnvironmentVariable('AZURE_OPENAI_MODEL_VERSION', '2026-09-22')
 param openAiModelCapacity = int(readEnvironmentVariable('AZURE_OPENAI_CAPACITY', '250'))
 param principalId         = readEnvironmentVariable('AZURE_PRINCIPAL_ID', '')
 

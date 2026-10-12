@@ -11,7 +11,7 @@ import telemetry
 from backends import build_backend
 from catalog import TargetCatalog
 from events import RunRegistry
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from generators.recorded import RecordedGenerator
@@ -21,6 +21,16 @@ from settings import Settings
 
 logger = logging.getLogger("ces.app")
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+# The board's files change with every deploy. Make browsers revalidate them (cheap 304s) instead of
+# running a cached, stale app.js against a newer API.
+NO_CACHE = {"Cache-Control": "no-cache"}
+
+
+class RevalidatedStaticFiles(StaticFiles):
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers.update(NO_CACHE)
+        return response
 
 
 class RaceRequest(BaseModel):
@@ -112,10 +122,13 @@ async def target_detail(name: str):
     return {**target.public(), "files": files}
 
 
-def _require_backend_image(role: str) -> None:
-    if not app_state.backend.has_image(role):
-        raise HTTPException(409, f"The '{role}' engine image isn't ready. Run scripts/prepare_images.py "
-                                 f"(or build it locally) before starting a race.")
+async def _require_backend_image(*roles: str) -> None:
+    # Re-discover first, so images rebuilt by prepare_images.py are used without restarting the app.
+    await app_state.backend.refresh_images()
+    for role in roles:
+        if not app_state.backend.has_image(role):
+            raise HTTPException(409, f"The '{role}' engine image isn't ready. Run scripts/prepare_images.py "
+                                     f"(or build it locally) before starting a race.")
 
 
 @app.post("/api/race")
@@ -124,7 +137,7 @@ async def start_race(request: RaceRequest):
         target = app_state.catalog.get(request.target)
     except KeyError:
         raise HTTPException(404, f"Unknown target: {request.target}") from None
-    _require_backend_image("primed")
+    await _require_backend_image("primed")
     generator = app_state.generator_for(request.generator)
 
     extra = []
@@ -148,8 +161,7 @@ async def start_benchmark(request: BenchmarkRequest):
     candidate = app_state.recorded.benchmark_candidate(target.name)
     if candidate is None:
         raise HTTPException(400, f"No benchmark candidate recorded for {target.name}.")
-    _require_backend_image("primed")
-    _require_backend_image("base")
+    await _require_backend_image("primed", "base")
     state = app_state.runs.create("benchmark", request.model_dump())
     race = Race(state=state, settings=app_state.settings, backend=app_state.backend, target=target,
                 generator=app_state.recorded)
@@ -173,10 +185,13 @@ async def run_snapshot(run_id: str):
 
 
 @app.get("/api/runs/{run_id}/events")
-async def run_events(run_id: str, after: int = 0):
+async def run_events(run_id: str, after: int = 0, last_event_id: str | None = Header(None)):
     state = app_state.runs.get(run_id)
     if state is None:
         raise HTTPException(404, "Unknown run")
+    # A reconnecting EventSource sends the last id it saw; resume after it instead of replaying the run.
+    if last_event_id and last_event_id.isdigit():
+        after = max(after, int(last_event_id))
 
     async def event_stream():
         import json
@@ -196,8 +211,8 @@ async def index():
     page = STATIC_DIR / "index.html"
     if not page.is_file():
         return JSONResponse({"service": "code-execution-sandboxes referee"})
-    return FileResponse(page)
+    return FileResponse(page, headers=NO_CACHE)
 
 
 if STATIC_DIR.is_dir():
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    app.mount("/static", RevalidatedStaticFiles(directory=STATIC_DIR), name="static")

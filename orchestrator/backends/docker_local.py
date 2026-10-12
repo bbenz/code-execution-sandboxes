@@ -69,6 +69,9 @@ class DockerBackend(SandboxBackend):
     def has_image(self, image: str) -> bool:
         return self._available.get(image, False)
 
+    async def refresh_images(self) -> None:
+        await self.startup()
+
     async def prepare_run(self, run_id: str) -> None:
         labels = ["--label", "ces-app=referee", "--label", f"ces-run={run_id}"]
         await self._run("network", "create", "--internal", *labels, self.network(run_id))
@@ -139,8 +142,9 @@ class DockerBackend(SandboxBackend):
             if since and (entry.get("timestamp") or "") < since:
                 continue
             denied.append({key: entry.get(key) for key in ("timestamp", "host", "method", "path", "scheme")})
-        return EgressAudit(supported=True, denied=denied,
-                           last_updated=datetime.now(UTC).isoformat(timespec="milliseconds"))
+        # The sentinel logs each attempt as it handles it, so the log is complete up to now.
+        now = datetime.now(UTC).isoformat(timespec="milliseconds")
+        return EgressAudit(supported=True, denied=denied, last_updated=now, complete_through=now)
 
     async def delete(self, ref: SandboxRef) -> None:
         await self._run("rm", "-f", ref.id, check=False)

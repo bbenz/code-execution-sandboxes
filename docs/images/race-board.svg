@@ -35,7 +35,7 @@
     <rect x="458" y="156" width="312" height="5" rx="2" fill="#3ad29f"/>
     <rect x="458" y="172" width="104" height="16" rx="4" fill="#271b3a"/>
     <text x="465" y="184" fill="#b98cff" font-size="10" font-weight="700">DISQUALIFIED</text>
-    <text x="574" y="184" fill="#ff6b6b" font-size="10">⛔ egress blocked: metrics.contoso-telemetry.example/ingest</text>
+    <text x="574" y="184" fill="#ff6b6b" font-size="10">⛔ egress blocked: POST example.net/ingest</text>
   </g>
 
   <!-- feedback arrow -->

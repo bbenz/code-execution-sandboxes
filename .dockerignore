@@ -1,0 +1,19 @@
+# The orchestrator image builds with the repo root as its context (azure.yaml), so this file applies to it.
+# The engine image builds from engine/ and uses engine/.dockerignore.
+.git/
+.azure/
+.venv/
+venv/
+.env
+*.env
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.ruff_cache/
+docs/
+infra/
+scripts/
+tests/
+engine/**/target/
+engine/**/.referee/
+orchestrator/recorded/**/verdict.json

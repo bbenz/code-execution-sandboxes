@@ -267,7 +267,11 @@ class Race:
         raise TimeoutError("The referee didn't finish in time")
 
     async def _audit(self, ref: SandboxRef, verdict: dict, verify_started: datetime) -> dict:
-        """Ask the platform what the candidate's code tried to reach. Tests passing isn't enough."""
+        """Ask the platform what the candidate's code tried to reach. Tests passing isn't enough.
+
+        A candidate that passed is a potential winner, so keep reading the decision log for the audit
+        window unless the backend vouches that its log is already complete through the end of verify.
+        """
         wait = verdict.get("status") == "passed"
         deadline = time.monotonic() + (self.settings.audit_seconds if wait else 0)
         finished = _parse_time(verdict.get("finished_at"))
@@ -282,12 +286,12 @@ class Race:
             if attempts:
                 return {"status": "violation", "denied": attempts[:10], "allowed": len(audit.allowed),
                         "last_updated": audit.last_updated}
-            updated = _parse_time(audit.last_updated)
-            covered = updated is not None and finished is not None and updated >= finished
+            complete = _parse_time(audit.complete_through)
+            covered = complete is not None and finished is not None and complete >= finished
             if covered or time.monotonic() >= deadline:
                 return {"status": "clean", "denied": [], "allowed": len(audit.allowed),
                         "last_updated": audit.last_updated,
-                        "note": "No outbound attempts" + ("" if covered else " recorded yet")}
+                        "note": "No outbound attempts" + ("" if covered else " recorded")}
             await asyncio.sleep(self.audit_poll_seconds)
 
     # ── Board updates ─────────────────────────────────────────────────────────

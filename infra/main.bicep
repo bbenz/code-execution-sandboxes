@@ -26,10 +26,10 @@ param location string = resourceGroup().location
 param openAiLocation string = location
 
 @description('Coding-agent model to deploy.')
-param openAiModel string = 'gpt-5.6-luna'
+param openAiModel string = 'gpt-6-luna'
 
 @description('Coding-agent model version.')
-param openAiModelVersion string = '2026-07-09'
+param openAiModelVersion string = '2026-09-22'
 
 @minValue(1)
 @description('Model deployment capacity (thousands of tokens per minute).')

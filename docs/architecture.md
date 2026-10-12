@@ -36,7 +36,9 @@ For every candidate the race loop (`orchestrator/race.py`) does this, with each 
 4. **verify** — start `referee verify` in the background and poll its status file so the board shows live
    phases (policy scan → compile → test → lint).
 5. **audit** — read the sandbox's **egress decisions** from the platform. A candidate that tried to reach
-   the network is disqualified here, even if its tests passed.
+   the network is disqualified here, even if its tests passed. On ACA a blocked attempt shows up in the
+   decision log about 10–20 s after it happens, so a candidate that passed is watched for
+   `EGRESS_AUDIT_SECONDS` (30 s by default) before it can win.
 6. **delete** — always, in a `finally`. Auto-suspend (60 s) and auto-delete (10 min) are a backstop if the
    orchestrator dies mid-run.
 
@@ -72,18 +74,19 @@ engine/Dockerfile ──az acr build──►  referee-engine:latest  (in ACR)
                                             │
                       create_disk_image_from_registry (v2 endpoint, managed-identity pull)
                                             ▼
-                                    ces-base-<digest>   ← cold: toolchains only
+                            ces-base-<built>-<digest>   ← cold: toolchains only
                                             │
           boot a primer sandbox (Maven Central egress only) → referee prime → begin_commit
                                             ▼
-                                   ces-primed-<digest>  ← warm: dependency + build caches baked in
+                           ces-primed-<built>-<digest>  ← warm: dependency + build caches baked in
                                             │
                         every candidate boots from here and builds fully OFFLINE
 ```
 
-`scripts/prepare_images.py` builds both images and is idempotent: it tags them with the engine image's
-digest and reuses them on re-runs. The orchestrator discovers the newest image of each kind by label
-prefix, or you can pin exact IDs with `REFEREE_PRIMED_DISK_IMAGE_ID` / `REFEREE_BASE_DISK_IMAGE_ID`.
+`scripts/prepare_images.py` builds both images and is idempotent: it names them with their build time and
+the engine image's digest, and reuses them on re-runs. Before each race the orchestrator picks the newest
+image of each kind by that name, so a rebuild takes effect without a restart. You can also pin exact IDs
+with `REFEREE_PRIMED_DISK_IMAGE_ID` / `REFEREE_BASE_DISK_IMAGE_ID`.
 
 **Why commit, not a snapshot.** Candidates must boot with a default-deny egress policy applied *at create
 time*. In `azure-containerapps-sandbox` 0.1.0b4, creating a sandbox from a `snapshot_id` rejects an
@@ -96,7 +99,9 @@ the image *with* its egress policy.
 - **Isolation** — each candidate runs in its own microVM (own kernel, own memory), not a shared-kernel
   container. A candidate can't see the orchestrator or another candidate.
 - **Default-deny egress** — candidate sandboxes get an egress policy of `default_action=Deny` with
-  `traffic_inspection=Full`, and **no allow rules**. Every outbound attempt is refused and recorded.
+  `traffic_inspection=Full`, and **no allow rules**. Every outbound attempt is refused and recorded. (The
+  proxy is transparent: the sandbox resolves names with normal DNS and the proxy intercepts the connection.
+  A name that doesn't resolve fails inside the sandbox, so it's blocked but never shows up in the log.)
 - **Keyless everywhere** — the orchestrator uses its managed identity for the data plane and the model; the
   sandbox group's identity pulls the engine image from ACR. No secret is ever placed inside a candidate
   sandbox — there's nothing there to steal.

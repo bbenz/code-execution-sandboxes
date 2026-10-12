@@ -63,5 +63,6 @@ is slow or flaky, flip back and the demo is identical.
   first run. Say so; it resolves. `scripts/sweep.py` clears leftovers from a previous run.
 - **The live model errors** — flip the coding agent to **Recorded** and re-run. Same story, deterministic.
 - **The egress catch doesn't show** — confirm the audit window (`EGRESS_AUDIT_SECONDS`, default 30 s) and
-  that the rogue is in the wave; on Azure the egress decision log can take a few seconds to refresh.
+  that the rogue is in the wave. On Azure a blocked attempt reaches the egress decision log about 10–20 s
+  after it happens, so don't set the window below 30 s.
 - **Everything is red** — run `python scripts/smoke.py`; it isolates create → health → verify → audit.

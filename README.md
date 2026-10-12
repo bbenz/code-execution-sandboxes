@@ -103,6 +103,9 @@ model and for ACA Sandboxes (check [supported regions](https://learn.microsoft.c
 ```bash
 azd auth login
 az login
+# The postprovision hook runs Python, so install the orchestrator's packages first:
+python -m venv .venv && source .venv/bin/activate   # PowerShell: ./.venv/Scripts/Activate.ps1
+pip install -r orchestrator/requirements.txt
 azd up
 ```
 

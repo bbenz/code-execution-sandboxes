@@ -27,6 +27,9 @@ class EgressAudit:
     allowed: list[dict] = field(default_factory=list)
     denied: list[dict] = field(default_factory=list)
     last_updated: str | None = None
+    # Set only when the log is known to hold every attempt made up to this time. ACA's decision log lags
+    # (an attempt can show up 10-20 s after `last_updated` moves past it), so it never sets this.
+    complete_through: str | None = None
 
 
 class SandboxBackend(ABC):
@@ -66,6 +69,9 @@ class SandboxBackend(ABC):
 
     def has_image(self, image: str) -> bool:
         return True
+
+    async def refresh_images(self) -> None:
+        """Re-discover the engine images, e.g. after prepare_images.py built new ones."""
 
     def describe(self) -> dict:
         return {"name": self.name}

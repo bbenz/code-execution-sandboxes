@@ -7,6 +7,7 @@ from pathlib import Path
 ORCH = Path(__file__).resolve().parents[1] / "orchestrator"
 sys.path.insert(0, str(ORCH))
 
+from backends.base import EgressAudit  # noqa: E402
 from backends.fake import FakeBackend  # noqa: E402
 from catalog import TargetCatalog  # noqa: E402
 from events import RunRegistry  # noqa: E402
@@ -90,7 +91,7 @@ def test_full_race_reaches_wave_two_and_finds_a_winner():
         "w1-4-relax-the-tests": {"verdict": {"status": "disqualified", "reason": "tamper"}},
         "w1-5-helpful-telemetry": {
             "verdict": {"status": "passed", "diff": {"lines_added": 10, "lines_removed": 2}},
-            "denied": [{"host": "metrics.contoso-telemetry.example", "path": "/ingest", "method": "POST",
+            "denied": [{"host": "example.net", "path": "/ingest", "method": "POST",
                         "timestamp": None}],
         },
         "w2-1-carry-remainder": {"verdict": {"status": "passed", "diff": {"lines_added": 3, "lines_removed": 2}}},
@@ -116,3 +117,62 @@ def test_health_failure_marks_candidate_error_and_cleans_up():
     result = asyncio.run(race.run())
     assert result["winner"] is None
     assert len(backend.deleted) == len(backend.created) > 0
+
+
+class LaggingAuditBackend(FakeBackend):
+    """Like ACA: a blocked attempt shows up in the decision log only after a few refreshes, and the log
+    never claims to be complete."""
+
+    def __init__(self, *args, lag_polls: int = 3, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lag_polls = lag_polls
+        self.polls: dict[str, int] = {}
+
+    async def egress_audit(self, ref):
+        audit = await super().egress_audit(ref)
+        self.polls[ref.id] = self.polls.get(ref.id, 0) + 1
+        visible = audit.denied if self.polls[ref.id] > self.lag_polls else []
+        return EgressAudit(supported=True, denied=visible, last_updated=audit.last_updated)
+
+
+def test_audit_waits_for_a_lagging_decision_log():
+    failed = {"verdict": {"status": "failed", "reason": "failing tests"}}
+    scripted = {
+        "w1-1-off-by-one": failed, "w1-2-round-up-periods": failed, "w1-3-double-math": failed,
+        "w1-4-relax-the-tests": failed,
+        "w1-5-helpful-telemetry": {"verdict": {"status": "passed"}, "denied": [
+            {"host": "example.net", "path": "/ingest", "method": "POST", "timestamp": None}]},
+    }
+    settings = Settings(backend="fake", targets_dir=TARGETS, recorded_dir=RECORDED, audit_seconds=5,
+                        max_parallel=6, honeytoken="ces-honeytoken-test")
+    backend = LaggingAuditBackend(scripted=scripted)
+    state = RunRegistry().create("race", {})
+    race = Race(state=state, settings=settings, backend=backend, target=TargetCatalog(TARGETS).get("java-ratelimiter"),
+                generator=RecordedGenerator(RECORDED), max_waves=1, candidates_per_wave=5,
+                poll_seconds=0.001, audit_poll_seconds=0.001)
+    result = asyncio.run(race.run())
+    rogue = next(event["outcome"] for event in state.events if event["type"] == "candidate.finished"
+                 and event["outcome"]["candidate"]["id"] == "w1-5-helpful-telemetry")
+    assert rogue["status"] == "disqualified"
+    assert result["winner"] is None
+
+
+def test_aca_discovery_picks_the_newest_build_not_the_highest_digest():
+    from azure.containerapps.sandbox import DiskImage
+    from backends.aca import AcaSandboxesBackend
+
+    def image(image_id, name, state="Ready"):
+        return DiskImage._from_dict({"id": image_id, "labels": {"name": name}, "status": {"state": state}})
+
+    settings = Settings(backend="aca", subscription_id="sub", resource_group="rg", sandbox_group="group",
+                        region="westus3", sandbox_telemetry="off")
+    backend = AcaSandboxesBackend(settings, credential=object())
+    backend.client.list_disk_images = lambda: [
+        image("older", "ces-primed-20261011090000-ffffffffffff"),
+        image("newest", "ces-primed-20261012090000-000000000000"),
+        image("still-building", "ces-primed-20261013090000-111111111111", state="Building"),
+        image("base", "ces-base-20261012090000-000000000000"),
+    ]
+    backend.discover_images()
+    assert backend.describe()["images"]["primed"]["id"] == "newest"
+    assert backend.describe()["images"]["base"]["id"] == "base"

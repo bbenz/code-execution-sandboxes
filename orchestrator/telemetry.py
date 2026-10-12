@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -20,12 +21,18 @@ except ImportError:  # pragma: no cover - the orchestrator still works without O
 
 def setup(connection_string: str) -> bool:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    # Otherwise azure-core logs every HTTP request (headers included) at INFO: thousands of lines per race.
+    logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
     if not connection_string:
         return False
     try:
         from azure.monitor.opentelemetry import configure_azure_monitor
 
-        configure_azure_monitor(connection_string=connection_string, logger_name="ces")
+        # The distro's default sampler keeps ~5 spans per second and re-samples child spans, so a busy race
+        # loses its per-candidate and in-sandbox phase spans. A race is small: keep every span unless the
+        # operator picks a sampler with OTEL_TRACES_SAMPLER.
+        options = {} if os.environ.get("OTEL_TRACES_SAMPLER") else {"sampling_ratio": 1.0}
+        configure_azure_monitor(connection_string=connection_string, logger_name="ces", **options)
         logger.info("Exporting traces, metrics, and logs to Application Insights")
         return True
     except Exception as error:  # observability must never take the demo down
